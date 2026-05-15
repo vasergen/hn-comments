@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Fetch all HN comments by a given username and print to stdout."""
+
+import sys
+import json
+import html
+import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+
+HN_API = "https://hacker-news.firebaseio.com/v0"
+WORKERS = 50
+
+
+def fetch_json(url):
+    req = Request(url, headers={"User-Agent": "hn-comments/1.0"})
+    with urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read().decode())
+
+
+def fetch_item(item_id):
+    return fetch_json(f"{HN_API}/item/{item_id}.json")
+
+
+def strip_html(text):
+    text = html.unescape(text)
+    text = re.sub(r"<p>", "\n\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    return text.strip()
+
+
+def progress(msg):
+    print(msg, file=sys.stderr, flush=True)
+
+
+def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <username>", file=sys.stderr)
+        sys.exit(1)
+
+    username = sys.argv[1]
+
+    progress(f"Fetching profile for '{username}'...")
+    try:
+        user = fetch_json(f"{HN_API}/user/{username}.json")
+    except (URLError, HTTPError) as e:
+        print(f"Error fetching user: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if user is None:
+        print(f"User '{username}' not found.", file=sys.stderr)
+        sys.exit(1)
+
+    submitted = user.get("submitted", [])
+    if not submitted:
+        progress(f"No submissions found for '{username}'.")
+        sys.exit(0)
+
+    total = len(submitted)
+    progress(f"Fetching {total} items (comments + stories)...")
+
+    comments = []
+    done = 0
+
+    with ThreadPoolExecutor(max_workers=WORKERS) as executor:
+        futures = {executor.submit(fetch_item, iid): iid for iid in submitted}
+        for future in as_completed(futures):
+            done += 1
+            if done % 200 == 0 or done == total:
+                progress(f"  {done}/{total} items processed...")
+            try:
+                item = future.result()
+                if item and item.get("type") == "comment" and not item.get("deleted") and not item.get("dead"):
+                    comments.append(item)
+            except Exception:
+                pass
+
+    comments.sort(key=lambda c: c.get("time", 0), reverse=True)
+    progress(f"Found {len(comments)} comments. Printing...\n")
+
+    sep = "=" * 72
+
+    for c in comments:
+        ts = c.get("time", 0)
+        dt = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        url = f"https://news.ycombinator.com/item?id={c['id']}"
+        text = strip_html(c.get("text", "(no text)"))
+
+        print(sep)
+        print(f"ID:   {c['id']}  |  {dt}")
+        print(f"URL:  {url}")
+        print()
+        print(text)
+        print()
+
+    print(sep)
+    print(f"Total: {len(comments)} comments by {username}")
+
+
+if __name__ == "__main__":
+    main()
