@@ -1,4 +1,10 @@
 ========================================================================
+ID:   48181930  |  2026-05-18 16:27 UTC
+URL:  https://news.ycombinator.com/item?id=48181930
+
+I know a solo founder who got SOC2 certified. He is literally the only person running the product/company and is SOC2 certified. I found that hilarious to be honest. But he is trying to play the "win enterprise deals" game but not sure how that helps when you are literally 1 person.
+
+========================================================================
 ID:   48153737  |  2026-05-15 20:59 UTC
 URL:  https://news.ycombinator.com/item?id=48153737
 
@@ -4410,12 +4416,6 @@ URL:  https://news.ycombinator.com/item?id=38007511
 I get your point. But we have to draw the line somewhere and Soda (even though addictive) is not something that has the same level of peer pressure and damage vector as Social Media. If all your 9 year old friends are on it, you bet you wanna be on it.
 
 I will also argue that things like Soda can harm you but are much easier to restrict compared to Social Media access and social media has compounding effects on your mind especially if you are a child.
-
-========================================================================
-ID:   38006996  |  2023-10-24 23:14 UTC
-URL:  https://news.ycombinator.com/item?id=38006996
-
-As someone who is very pro Free Speech and hates censorships in general, banning these toxic social media especially for Kids is a good idea and as a parent, I am all in for it. If you cannot smoke/drink till 21, you shouldn't be able to do Social media till then. It is that bad especially for children.
 
 ========================================================================
 ID:   37969192  |  2023-10-21 18:12 UTC
