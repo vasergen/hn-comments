@@ -4418,6 +4418,12 @@ I get your point. But we have to draw the line somewhere and Soda (even though a
 I will also argue that things like Soda can harm you but are much easier to restrict compared to Social Media access and social media has compounding effects on your mind especially if you are a child.
 
 ========================================================================
+ID:   38006996  |  2023-10-24 23:14 UTC
+URL:  https://news.ycombinator.com/item?id=38006996
+
+As someone who is very pro Free Speech and hates censorships in general, banning these toxic social media especially for Kids is a good idea and as a parent, I am all in for it. If you cannot smoke/drink till 21, you shouldn't be able to do Social media till then. It is that bad especially for children.
+
+========================================================================
 ID:   37969192  |  2023-10-21 18:12 UTC
 URL:  https://news.ycombinator.com/item?id=37969192
 
@@ -14922,12 +14928,6 @@ URL:  https://news.ycombinator.com/item?id=24625132
 Quit social media, political media and rest of internet is just fine.
 
 ========================================================================
-ID:   24615475  |  2020-09-28 11:28 UTC
-URL:  https://news.ycombinator.com/item?id=24615475
-
-It is absolute Capitalism. Apparently, Americans have gotten used to it because supposedly the only other option to us is "Socialism". There is no middle ground. God forbid we ask for Capitalism with a little bit of social safety net.
-
-========================================================================
 ID:   24609440  |  2020-09-27 19:26 UTC
 URL:  https://news.ycombinator.com/item?id=24609440
 
@@ -16293,16 +16293,6 @@ URL:  https://news.ycombinator.com/item?id=22924100
 I am the big boss of our 12 person company but I still cannot ever get to a perfect system. Yes in theory, I can make all the decisions and impose BUT it is far from it. The challenges of building a perfect system is not only related to how much power you have (yes it helps) but many other factors.
 
 ========================================================================
-ID:   22923975  |  2020-04-20 14:18 UTC
-URL:  https://news.ycombinator.com/item?id=22923975
-
-Remote work will never been an absolute thing. It depends on context, personal habits/preferences and most importantly: experience doing it over time.
-
-I personally cannot work from home. COVID has made it worse as kids are home BUT even if I had the whole house to myself, I just cannot work from home. I NEED a dedicated office outside my house (yes I already have an office room in my house). Reason is simple. I don't have the discipline to work from home. I get distracted too easily. So I m not a good candidate for WFH. Do I want the flexibility when needed ? Of course. But do I WANT to work from home all the time ? Hell no.
-
-I would say the future of work is not just remote. The future of work is "employers allowing more flexibility in work location" but as an employer myself, I am personally not in favor of 100% remote. That's me I know but sorry, not everyone is cut out for remote work.
-
-========================================================================
 ID:   22917203  |  2020-04-19 17:14 UTC
 URL:  https://news.ycombinator.com/item?id=22917203
 
@@ -16829,18 +16819,6 @@ ID:   22327926  |  2020-02-14 16:38 UTC
 URL:  https://news.ycombinator.com/item?id=22327926
 
 But thats so not web 2.0/3.0. You gotta add more padding so we can create smooth scrolling. /s. I am a culprit of this too now btw.
-
-========================================================================
-ID:   22321426  |  2020-02-13 21:05 UTC
-URL:  https://news.ycombinator.com/item?id=22321426
-
-In my humble opinion, there are 2 types of people who use facebook:
-
-1. The show offs who want to share every little detail about their every little thing in life.
-
-2. People who want to keep tabs on their family/friends occasionally.
-
-I started as #1 back in 2004 when fb was still early on and slowly graduated to #2.
 
 ========================================================================
 ID:   22266087  |  2020-02-07 14:15 UTC
@@ -33098,4 +33076,4 @@ URL:  https://news.ycombinator.com/item?id=4284005
 Just tried it using the provided PSD. I am supposed to get an email with results. Is there any manual work involved in getting the HTML/CSS ?
 
 ========================================================================
-Total: 4020 comments by codegeek
+Total: 4018 comments by codegeek
