@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pipe a user's comments.txt into a single copilot call.
+# Pipe a user's comments.txt into a single claude call.
 # Usage: analyze_oneshot.sh USERNAME QUESTION MODEL
 set -euo pipefail
 
@@ -10,15 +10,10 @@ model="$3"
 src="users/$username/comments.txt"
 out="users/$username/recommendations.md"
 
-sandbox=$(mktemp -d)
-trap 'rm -rf "$sandbox"' EXIT
-
-copilot \
-  -C "$sandbox" \
-  --model "$model" \
-  --allow-all-tools \
-  --no-custom-instructions \
-  --disallow-temp-dir \
+claude \
   -p "$question" \
+  --model "$model" \
+  --no-session-persistence \
+  --tools "" \
   < "$src" \
   >> "$out"

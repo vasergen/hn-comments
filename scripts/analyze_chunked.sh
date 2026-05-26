@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
-# Map-reduce a large comments.txt through copilot.
-# Splits the file at the record separator ('=' x 72), runs a map call per
-# chunk, optionally mid-reduces, then a final reduce into recommendations.md.
+# Map-reduce a large comments.txt through claude.
+# Splits the file at the record separator ('=' x 72), runs map calls in
+# parallel per chunk, then a single reduce into recommendations.md.
 #
-# Each copilot call runs in an isolated empty sandbox dir with file tools
-# effectively neutralized — the only input is the stdin chunk we pipe in.
-#
-# Usage: analyze_chunked.sh USERNAME QUESTION MODEL CHUNK_BYTES
+# Usage: analyze_chunked.sh USERNAME QUESTION MODEL CHUNK_BYTES CONCURRENCY
 set -euo pipefail
 
 username="$1"
 question="$2"
 model="$3"
 chunk_bytes="$4"
+concurrency="$5"
 
 user_dir="users/$username"
 work="$user_dir/.chunks"
@@ -22,18 +20,13 @@ out="$user_dir/recommendations.md"
 rm -rf "$work"
 mkdir -p "$work"
 
-sandbox=$(mktemp -d)
-trap 'rm -rf "$sandbox"' EXIT
-
-copilot_call() {
+claude_call() {
   local prompt="$1"
-  copilot \
-    -C "$sandbox" \
+  claude \
+    -p "$prompt" \
     --model "$model" \
-    --allow-all-tools \
-    --no-custom-instructions \
-    --disallow-temp-dir \
-    -p "$prompt"
+    --no-session-persistence \
+    --tools ""
 }
 
 # Split at the record separator into byte-bounded chunks.
@@ -58,46 +51,38 @@ awk -v limit="$chunk_bytes" -v outdir="$work" '
 
 chunks=("$work"/chunk_*.txt)
 total=${#chunks[@]}
-echo "Split into $total chunks (~${chunk_bytes} bytes each)."
+echo "Split into $total chunks (~${chunk_bytes} bytes each). Mapping with concurrency=$concurrency."
 
 map_prompt="You are extracting raw items for this question: ${question}
 From the comments below, output ONLY a flat list, one item per line, each tagged with one of: [BOOK], [BLOG], [ARTICLE], [PODCAST], [TALK], [PAPER], [TOOL], [OTHER]. Include title and author or URL when present. No prose, no headers, no duplicates within this chunk."
 
-partials="$work/partials.md"
-: > "$partials"
+# Run map calls in parallel; each writes to its own .out file so the
+# final concatenation preserves chunk order regardless of finish order.
+running=0
 i=0
 for chunk in "${chunks[@]}"; do
   i=$((i + 1))
-  echo "[$i/$total] map: $(basename "$chunk")"
-  copilot_call "$map_prompt" < "$chunk" >> "$partials"
+  (
+    echo "[$i/$total] map: $(basename "$chunk")"
+    claude_call "$map_prompt" < "$chunk" > "$chunk.out"
+  ) &
+  running=$((running + 1))
+  if (( running >= concurrency )); then
+    wait -n
+    running=$((running - 1))
+  fi
+done
+wait
+
+partials="$work/partials.md"
+: > "$partials"
+for chunk in "${chunks[@]}"; do
+  cat "$chunk.out" >> "$partials"
   printf '\n' >> "$partials"
 done
-
-# If partials are themselves too large, mid-reduce them in chunks first.
-psize=$(wc -c < "$partials")
-mid_limit=$(( chunk_bytes * 4 ))
-if [ "$psize" -gt "$mid_limit" ]; then
-  echo "Partials are $psize bytes — running mid-reduce pass."
-  mid_dir="$work/mid"
-  mkdir -p "$mid_dir"
-  split -C "$chunk_bytes" -d -a 4 "$partials" "$mid_dir/part_"
-  mid_out="$work/partials2.md"
-  : > "$mid_out"
-  mid_chunks=("$mid_dir"/part_*)
-  mid_total=${#mid_chunks[@]}
-  mid_prompt="Merge and deduplicate the tagged items below. Keep the same one-per-line tagged format ([BOOK], [BLOG], …). No prose."
-  j=0
-  for part in "${mid_chunks[@]}"; do
-    j=$((j + 1))
-    echo "[$j/$mid_total] mid-reduce: $(basename "$part")"
-    copilot_call "$mid_prompt" < "$part" >> "$mid_out"
-    printf '\n' >> "$mid_out"
-  done
-  partials="$mid_out"
-fi
 
 reduce_prompt="Below is a flat list of items extracted from many comment chunks for the question: ${question}
 Merge, deduplicate (case-insensitive, tolerate minor title variants), and produce final clean GitHub-flavored markdown grouped by category: Books, Blogs, Articles/Posts, Podcasts/Talks, Papers, Tools, Other. Drop the [TAG] prefixes. No commentary."
 
 echo "Reducing into final recommendations..."
-copilot_call "$reduce_prompt" < "$partials" >> "$out"
+claude_call "$reduce_prompt" < "$partials" >> "$out"

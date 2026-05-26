@@ -3,22 +3,30 @@ set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 default_question := "Extract books, blogs, articles, podcasts, talks, papers, tools or other resources that this user has recommended (or strongly endorsed) in their comments. Group by category: Books, Blogs, Articles/Posts, Podcasts/Talks, Tools, Other. Output clean GitHub-flavored markdown. Skip duplicates."
 
 # Bytes per map chunk when comments.txt exceeds the single-shot threshold.
-chunk_bytes := "200000"
+chunk_bytes := "500000"
 
-# Files up to this size are sent to copilot in one shot (current behavior).
-single_shot_threshold := "500000"
+# Files up to this size are sent to claude in one shot.
+single_shot_threshold := "800000"
 
-# Copilot model used for all analysis calls. Override: just analyze ... copilot_model=...
-copilot_model := "gpt-5.2"
+# Max concurrent map calls in the chunked path.
+map_concurrency := "4"
+
+# Claude model used for all analysis calls. Override: just analyze ... claude_model=...
+claude_model := "haiku"
 
 # Default recipe
 _default:
     @just --list
 
 # Fetch comments, commit, analyze, commit, push (one shot)
+# Reuses users/<USERNAME>/comments.txt if it's less than 7 days old.
 run USERNAME QUESTION=default_question:
-    just fetch {{USERNAME}}
-    just commit {{USERNAME}} "Add HN comments for {{USERNAME}}"
+    @if [ -f users/{{USERNAME}}/comments.txt ] && [ -n "$(find users/{{USERNAME}}/comments.txt -mtime -7 2>/dev/null)" ]; then \
+      echo "Using cached users/{{USERNAME}}/comments.txt (< 7 days old)"; \
+    else \
+      just fetch {{USERNAME}}; \
+      just commit {{USERNAME}} "Add HN comments for {{USERNAME}}"; \
+    fi
     just analyze {{USERNAME}} {{ quote(QUESTION) }}
     just commit {{USERNAME}} "Add analysis for {{USERNAME}}"
     just push
@@ -47,11 +55,11 @@ analyze USERNAME QUESTION=default_question:
 
 # One-shot path: implementation lives in scripts/analyze_oneshot.sh.
 _analyze_oneshot USERNAME QUESTION:
-    ./scripts/analyze_oneshot.sh {{USERNAME}} {{ quote(QUESTION) }} {{copilot_model}}
+    ./scripts/analyze_oneshot.sh {{USERNAME}} {{ quote(QUESTION) }} {{claude_model}}
 
 # Map-reduce path: implementation lives in scripts/analyze_chunked.sh.
 _analyze_chunked USERNAME QUESTION:
-    ./scripts/analyze_chunked.sh {{USERNAME}} {{ quote(QUESTION) }} {{copilot_model}} {{chunk_bytes}}
+    ./scripts/analyze_chunked.sh {{USERNAME}} {{ quote(QUESTION) }} {{claude_model}} {{chunk_bytes}} {{map_concurrency}}
 
 # Remove map-reduce scratch dir for a user.
 clean USERNAME:
