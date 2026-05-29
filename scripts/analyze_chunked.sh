@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Map-reduce a large comments.txt through claude.
+# Map-reduce a large comments.txt through a selectable LLM backend.
 # Splits the file at the record separator ('=' x 72), runs map calls in
 # parallel per chunk, then a single reduce into recommendations.md.
 #
-# Usage: analyze_chunked.sh USERNAME QUESTION MODEL CHUNK_BYTES CONCURRENCY
+# Usage: analyze_chunked.sh USERNAME QUESTION BACKEND MODEL CHUNK_BYTES CONCURRENCY
 set -euo pipefail
 
 username="$1"
 question="$2"
-model="$3"
-chunk_bytes="$4"
-concurrency="$5"
+backend="$3"
+model="$4"
+chunk_bytes="$5"
+concurrency="$6"
 
 user_dir="users/$username"
 work="$user_dir/.chunks"
@@ -20,13 +21,46 @@ out="$user_dir/recommendations.md"
 rm -rf "$work"
 mkdir -p "$work"
 
-claude_call() {
+use_model() {
+  local value="$1"
+  if [[ -z "$value" || "$value" == "default" ]]; then
+    return 1
+  fi
+  return 0
+}
+
+llm_call() {
   local prompt="$1"
-  claude \
-    -p "$prompt" \
-    --model "$model" \
-    --no-session-persistence \
-    --tools ""
+  case "$backend" in
+    claude)
+      if use_model "$model"; then
+        claude \
+          -p "$prompt" \
+          --model "$model" \
+          --no-session-persistence \
+          --tools ""
+      else
+        claude \
+          -p "$prompt" \
+          --no-session-persistence \
+          --tools ""
+      fi
+      ;;
+    copilot)
+      if use_model "$model"; then
+        copilot \
+          -p "$prompt" \
+          --model "$model"
+      else
+        copilot \
+          -p "$prompt"
+      fi
+      ;;
+    *)
+      echo "Unknown backend '$backend' (expected 'claude' or 'copilot')" >&2
+      exit 1
+      ;;
+  esac
 }
 
 # Split at the record separator into byte-bounded chunks.
@@ -64,7 +98,7 @@ for chunk in "${chunks[@]}"; do
   i=$((i + 1))
   (
     echo "[$i/$total] map: $(basename "$chunk")"
-    claude_call "$map_prompt" < "$chunk" > "$chunk.out"
+  llm_call "$map_prompt" < "$chunk" > "$chunk.out"
   ) &
   running=$((running + 1))
   if (( running >= concurrency )); then
@@ -85,4 +119,4 @@ reduce_prompt="Below is a flat list of items extracted from many comment chunks 
 Merge, deduplicate (case-insensitive, tolerate minor title variants), and produce final clean GitHub-flavored markdown grouped by category: Books, Blogs, Articles/Posts, Podcasts/Talks, Papers, Tools, Other. Drop the [TAG] prefixes. No commentary."
 
 echo "Reducing into final recommendations..."
-claude_call "$reduce_prompt" < "$partials" >> "$out"
+llm_call "$reduce_prompt" < "$partials" >> "$out"
