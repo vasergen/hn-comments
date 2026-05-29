@@ -4,19 +4,5 @@
 
 ---
 
-● List directory .
-  └ 10 files found
-
-● Check users and scripts directories (shell)
-  │ ls /home/vlgk/github/hn-comments/users/ | head -20 && ls
-  │ /home/vlgk/github/hn-comments/scripts/
-  └ 13 lines...
-
-● Check a user directory structure (shell)
-  │ ls /home/vlgk/github/hn-comments/users/tptacek/
-  └ 2 lines...
-
-It looks like your message is missing the actual list of items. It seems the content you wanted me to merge/deduplicate wasn't included.
-
-Could you paste the flat list of extracted items? Or did you want me to generate the recommendations markdown from a specific user's `comments.txt` file in this repo? If so, which user?
+It looks like no file was attached to your message. Could you share the flat list of extracted items? You can paste the content directly in the chat or let me know which user's data you'd like me to process (I can see existing files for: Aurornis, CharlesW, ChrisArchitect, WillAdams, bhouston, codegeek, kgeist, tiffanyh).
 

@@ -31,29 +31,84 @@ use_model() {
 
 llm_call() {
   local prompt="$1"
+  local input_file="${2:-}"
   case "$backend" in
     claude)
       if use_model "$model"; then
-        claude \
-          -p "$prompt" \
-          --model "$model" \
-          --no-session-persistence \
-          --tools ""
+        if [[ -n "$input_file" ]]; then
+          claude \
+            -p "$prompt" \
+            --model "$model" \
+            --no-session-persistence \
+            --tools "" \
+            < "$input_file"
+        else
+          claude \
+            -p "$prompt" \
+            --model "$model" \
+            --no-session-persistence \
+            --tools ""
+        fi
       else
-        claude \
-          -p "$prompt" \
-          --no-session-persistence \
-          --tools ""
+        if [[ -n "$input_file" ]]; then
+          claude \
+            -p "$prompt" \
+            --no-session-persistence \
+            --tools "" \
+            < "$input_file"
+        else
+          claude \
+            -p "$prompt" \
+            --no-session-persistence \
+            --tools ""
+        fi
       fi
       ;;
     copilot)
       if use_model "$model"; then
-        copilot \
-          -p "$prompt" \
-          --model "$model"
+        if [[ -n "$input_file" ]]; then
+          copilot \
+            --prompt "$prompt" \
+            --model "$model" \
+            --output-format text \
+            --silent \
+            --no-ask-user \
+            --available-tools= \
+            --disable-builtin-mcps \
+            --allow-all-paths \
+            < "$input_file"
+        else
+          copilot \
+            --prompt "$prompt" \
+            --model "$model" \
+            --output-format text \
+            --silent \
+            --no-ask-user \
+            --available-tools= \
+            --disable-builtin-mcps \
+            --allow-all-paths
+        fi
       else
-        copilot \
-          -p "$prompt"
+        if [[ -n "$input_file" ]]; then
+          copilot \
+            --prompt "$prompt" \
+            --output-format text \
+            --silent \
+            --no-ask-user \
+            --available-tools= \
+            --disable-builtin-mcps \
+            --allow-all-paths \
+            < "$input_file"
+        else
+          copilot \
+            --prompt "$prompt" \
+            --output-format text \
+            --silent \
+            --no-ask-user \
+            --available-tools= \
+            --disable-builtin-mcps \
+            --allow-all-paths
+        fi
       fi
       ;;
     *)
@@ -88,7 +143,7 @@ total=${#chunks[@]}
 echo "Split into $total chunks (~${chunk_bytes} bytes each). Mapping with concurrency=$concurrency."
 
 map_prompt="You are extracting raw items for this question: ${question}
-From the comments below, output ONLY a flat list, one item per line, each tagged with one of: [BOOK], [BLOG], [ARTICLE], [PODCAST], [TALK], [PAPER], [TOOL], [OTHER]. Include title and author or URL when present. No prose, no headers, no duplicates within this chunk."
+The HN comments are provided as an attached text file. Output ONLY a flat list, one item per line, each tagged with one of: [BOOK], [BLOG], [ARTICLE], [PODCAST], [TALK], [PAPER], [TOOL], [OTHER]. Include title and author or URL when present. No prose, no headers, no duplicates within this chunk."
 
 # Run map calls in parallel; each writes to its own .out file so the
 # final concatenation preserves chunk order regardless of finish order.
@@ -98,7 +153,7 @@ for chunk in "${chunks[@]}"; do
   i=$((i + 1))
   (
     echo "[$i/$total] map: $(basename "$chunk")"
-  llm_call "$map_prompt" < "$chunk" > "$chunk.out"
+    llm_call "$map_prompt" "$chunk" > "$chunk.out"
   ) &
   running=$((running + 1))
   if (( running >= concurrency )); then
@@ -116,7 +171,7 @@ for chunk in "${chunks[@]}"; do
 done
 
 reduce_prompt="Below is a flat list of items extracted from many comment chunks for the question: ${question}
-Merge, deduplicate (case-insensitive, tolerate minor title variants), and produce final clean GitHub-flavored markdown grouped by category: Books, Blogs, Articles/Posts, Podcasts/Talks, Papers, Tools, Other. Drop the [TAG] prefixes. No commentary."
+The extracted items are provided as an attached text file. Merge, deduplicate (case-insensitive, tolerate minor title variants), and produce final clean GitHub-flavored markdown grouped by category: Books, Blogs, Articles/Posts, Podcasts/Talks, Papers, Tools, Other. Drop the [TAG] prefixes. No commentary."
 
 echo "Reducing into final recommendations..."
-llm_call "$reduce_prompt" < "$partials" >> "$out"
+llm_call "$reduce_prompt" "$partials" >> "$out"

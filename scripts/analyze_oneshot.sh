@@ -41,13 +41,25 @@ case "$backend" in
   copilot)
     if use_model "$model"; then
       copilot \
-        -p "$question" \
+        --prompt "$question" \
         --model "$model" \
+        --output-format text \
+        --silent \
+        --no-ask-user \
+        --available-tools= \
+        --disable-builtin-mcps \
+        --allow-all-paths \
         < "$src" \
         >> "$out"
     else
       copilot \
-        -p "$question" \
+        --prompt "$question" \
+        --output-format text \
+        --silent \
+        --no-ask-user \
+        --available-tools= \
+        --disable-builtin-mcps \
+        --allow-all-paths \
         < "$src" \
         >> "$out"
     fi
